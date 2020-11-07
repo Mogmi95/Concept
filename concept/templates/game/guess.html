@@ -1,0 +1,78 @@
+
+{% extends "layout.html" %}
+{% block content %}
+    <div class="container">
+        <h1>Try to solve this</h1>
+        <br />
+    </div>
+    <div id="gamecontainer" class="container">
+    </div>
+
+    <div class="container">
+    <input id="answer" type="text" />
+    <br />
+    <button onclick="checkAnswer()">Submit answer</button>
+    </div>
+{% endblock %}
+{% block js %}
+
+<script>
+
+var gamedata = {{ data | safe }};
+var gameset = {{ concept_set | safe }};
+var idea = gamedata['idea'];
+var concepts = idea['concepts'];
+
+var gamecontainer = document.getElementById('gamecontainer');
+var tbl = document.createElement('table');
+var tbdy = document.createElement('tbody');
+
+function createConceptImage(id) {
+    image = document.createElement('img');
+    imageData = gameset[id];
+    image.alt = imageData['description'];
+    image.title = imageData['description'].join("\n");
+    image.src = "{{static_url_for('static', filename='build/img/concept/') }}" + imageData.image;
+    return image;
+}
+
+for (const concept of concepts) {
+    var tr = document.createElement('tr');
+    // Main idea
+    var td = document.createElement('td');
+    addIdea(td, concept['main'], true);
+    tr.appendChild(td);
+
+    // Sub ideas
+    for (const precision of concept['precisions']) {
+        td = document.createElement('td');
+        addIdea(td, precision, false);
+        tr.appendChild(td);
+    }
+    tbdy.appendChild(tr);
+}
+tbl.appendChild(tbdy);
+gamecontainer.appendChild(tbl);
+
+function addIdea(container, ideaID, isMainIdea) {
+    image = createConceptImage(ideaID);
+    image.classList.add("ideaImage");
+    if (isMainIdea) {
+        image.classList.add("ideaImageMain");
+    }
+    container.appendChild(image);
+}
+
+function checkAnswer() {
+    answerInput = document.getElementById("answer");
+    if (answerInput.value == idea['answer']) {
+        alert("YES");
+    } else {
+        alert("NO");
+    }
+    console.debug(answerInput.value)
+}
+
+</script>
+
+{% endblock %}

@@ -84,3 +84,33 @@ footer .footer-nav {
   margin-right: 25px;
   list-style: none;
 }
+
+/* Game */
+
+.ideaImage {
+  height: 150px;
+  width: 150px;
+}
+
+.ideaImageMain {
+  height: 200px;
+  width: 200px;
+}
+
+.trashIcon {
+  height: 100px;
+  width: 100px;
+}
+
+.addImage {
+  width: 100px;
+  height: 100px;
+  margin: 25px;
+  border: 4px dotted #aaaaaa;
+}
+
+.ideaContainer {
+  margin-top: 16px;
+  margin-bottom: 16px;
+  border: 1px dashed #aaaaaa;
+}

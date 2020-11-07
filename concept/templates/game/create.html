@@ -1,0 +1,307 @@
+
+{% extends "layout.html" %}
+{% block content %}
+    <div class="container">
+        <h1>Create a new riddle</h1>
+        <br />
+    </div>
+    <div id="main" class="row mb-2">
+        <div id="gamecontainer" class="col-md-6">
+            <div class="row">
+            {% for elt in concept_set %}
+                <div class="col-ms-2 themed-grid-col">
+                    <img class="ideaImage"
+                        id="{{ elt }}"
+                        draggable="true"
+                        ondragstart="drag(event)"
+                        title="{{ concept_set[elt]['description'] }}"
+                        src="{{static_url_for('static', filename='build/img/concept/' + concept_set[elt]['image']) }}"
+                    />
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div id="ideasContainer">
+                <h2>Ideas</h2>
+                <!--
+                <div id="containeridea0" class="row ideaContainer" ondrop="drop(event)" ondragover="allowDrop(event)">
+                    <div class="addImage"></div>
+                </div>
+                -->
+            </div>
+            <div>
+                <button onclick="createNewIdea()">Create new idea</button>
+
+                <br />
+                <input id="answer" type="text" />
+                <button onclick="create()">Create</button>
+                <br />
+                <img id="trash" class="trashIcon" ondrop="drop(event)" ondragover="allowDrop(event)" src="{{static_url_for('static', filename='build/img/trash.svg') }}" />
+            </div>
+
+            <div id="DEBUG"></div>
+    </div>
+
+{% endblock %}
+{% block js %}
+
+<script>
+
+var gameset = {{ concept_set | safe }};
+
+// Map of current ideas. Key is the id of the corresponding div containing the concepts.
+// An idea is a set of concepts.
+var ideas = {}
+var incrementalID = 0;
+
+var availableColors = ["#E2F0CB", "#FFB7B2", "#C7CEEA", "#B5EAD7"];
+
+ideas = {};
+
+createNewIdea();
+
+function allowDrop(ev) {
+    ev.preventDefault();
+}
+
+function drag(ev) {
+    ev.dataTransfer.setData("conceptDomID", ev.target.id);
+    ev.dataTransfer.setData("conceptID", getConceptIDFromDomID(ev.target.id));
+}
+
+/**
+** Since I'm messing with the IDs, I have to do that. I have currently no idea how to
+** add metadata to DOM elements in a not dirty way. Someday.
+*/
+function getConceptIDFromDomID(domID) {
+    return(domID.split("_")[0]);
+}
+
+function drop(ev) {
+    ev.preventDefault();
+    var conceptID = ev.dataTransfer.getData("conceptID");
+    var conceptDomID = ev.dataTransfer.getData("conceptDomID");
+    var targetId = ev.target.id;
+    // Delete a concept
+    if (targetId == "trash") {
+        removeConcept(conceptDomID);
+    // Swapping two concepts
+    } else if (targetId.includes("_copy") || conceptDomID.includes("_copy")) {
+        swapConcepts(conceptDomID, targetId);
+    // Adding a concept to an idea
+    } else {
+        console.debug(targetId);
+        // If targeting an element inside the list, should still target the container.
+        if (!targetId.includes("containeridea")) {
+            targetId = ev.target.parentNode.id;
+        }
+        addConceptToIdea(conceptID, targetId, -1)
+    }
+}
+
+function removeConcept(conceptDomID) {
+    console.debug("Deleting concept " + conceptDomID);
+    var domMovingElement = document.getElementById(conceptDomID)
+
+    // Deleting internaly
+    var idea = findIdeaFromDomConceptID(conceptDomID);
+    if (idea != null) {
+        var eltIndex = 0;
+        for (var concept of idea.concepts) {
+            if (concept.domID == conceptDomID) {
+                idea.concepts.splice(eltIndex, 1);
+                domMovingElement.remove();
+                console.debug("Removal success");
+                break;
+            }
+            eltIndex++;
+        }
+    }
+    debugDump();
+}
+
+function createNewIdea() {
+    var domIdea = document.createElement('div');
+    incrementalID += 1;
+    domIdea.id = "containeridea" + incrementalID;
+    domIdea.classList.add('row');
+    domIdea.classList.add('ideaContainer');
+    domIdea.ondrop=function(event){drop(event)};
+    domIdea.ondragover=function(event){allowDrop(event)};
+    domIdea.style.backgroundColor = availableColors.shift();
+
+    // Creating the + element
+    var plus = document.createElement('div');
+    plus.classList.add("addImage");
+    domIdea.appendChild(plus);
+
+    // Storing the idea
+    ideas[domIdea.id] = {"concepts": [], "id": domIdea.id};
+
+    var ideasContainer = document.getElementById("ideasContainer");
+    ideasContainer.appendChild(domIdea);
+    debugDump();
+}
+
+function swapConcepts(movingElementID, destinationElementID) {
+    var domMovingElement = document.getElementById(movingElementID)
+    var domDestinationElement = document.getElementById(destinationElementID)
+
+    debugDump();
+
+    console.debug(movingElementID);
+    console.debug(destinationElementID);
+
+    var movingElementIdea = findIdeaFromDomConceptID(movingElementID);
+    var destinationElementIdea = findIdeaFromDomConceptID(destinationElementID);
+
+    // Swapping two concepts from ideas
+    if (movingElementID.includes("_copy") && destinationElementID.includes("_copy")) {
+        console.debug("Swapping")
+        if (isConceptInIdea(movingElementID, destinationElementIdea.id) || isConceptInIdea(destinationElementID, movingElementIdea.id)) {
+            console.debug("Already existing concept.")
+            return;
+        }
+        var movingConcept = removeConceptFromIdeaWithDomID(movingElementID, movingElementIdea);
+        var destinationConcept = removeConceptFromIdeaWithDomID(destinationElementID, destinationElementIdea);
+
+
+        // Internal swap
+        movingElementIdea.concepts.push(destinationConcept);
+        destinationElementIdea.concepts.push(movingConcept);
+        // Visual swap
+        domMovingElement.parentNode.insertBefore(domDestinationElement.cloneNode(true), domMovingElement);
+        domDestinationElement.parentNode.insertBefore(domMovingElement.cloneNode(true), domDestinationElement);
+        domMovingElement.parentNode.removeChild(domMovingElement);
+        domDestinationElement.parentNode.removeChild(domDestinationElement);
+        debugDump();
+    // Moving a concept from an idea to another without replacing any
+    } else if (movingElementID.includes("_copy") && destinationElementID.includes("container")) {
+        console.debug("Moving")
+        if (isConceptInIdea(movingElementID, destinationElementID)) {
+            console.debug("Already existing concept.")
+            return;
+        }
+        var movingConcept = removeConceptFromIdeaWithDomID(movingElementID, movingElementIdea);
+        domMovingElement.parentNode.removeChild(domMovingElement);
+        addConceptToIdea(getConceptIDFromDomID(movingElementID), destinationElementID, -1);
+    // Replacing a concept from an idea with one from the list
+    } else {
+        console.debug("Replacing")
+        if (isConceptInIdea(movingElementID, destinationElementIdea.id)) {
+            console.debug("Already existing concept.")
+            return;
+        }
+        var destinationConcept = removeConceptFromIdeaWithDomID(destinationElementID, destinationElementIdea);
+        // Creating the concept to a specific place
+        var index2 = Array.prototype.indexOf.call(domDestinationElement.parentNode.children, domDestinationElement);
+        domDestinationElement.parentNode.removeChild(domDestinationElement);
+        addConceptToIdea(movingElementID, destinationElementIdea.id, index2);
+    }
+}
+
+function isConceptInIdea(conceptID, ideaID) {
+    console.debug(`Checking if ${conceptID} is in ${ideaID}`);
+    conceptID = getConceptIDFromDomID(conceptID);
+    var idea = ideas[ideaID];
+    if (idea != null) {
+        for (const concept of idea.concepts) {
+            console.debug(`isConceptInIdea : Checking if ${concept.id} ==  ${conceptID}`);
+            if (concept.id == conceptID) {
+                console.debug(`isConceptInIdea : YES`);
+                return(true);
+            }
+        }
+    }
+    console.debug(`isConceptInIdea : NO`);
+    return(false);
+}
+
+function addConceptToIdea(conceptID, ideaID, position) {
+    console.debug(`Creating a concept ${conceptID} inside ${ideaID} at position ${position}`);
+    var htmlContainer = document.getElementById(ideaID);
+    var idea = ideas[ideaID];
+    if (isConceptInIdea(conceptID, ideaID)) {
+        console.debug("Already existing concept.")
+        return;
+    }
+    // Creating the concept
+    var concept = {"id":conceptID};
+    // If only concept, becomes the main one
+    if (idea.concepts.size == 1) {
+        concept['is_core'] = true;
+    }
+    idea.concepts.push(concept);
+
+    // Displaying the new element
+    var elt = document.getElementById(conceptID);
+    var nodeCopy = createConceptCopy(elt);
+    htmlContainer.appendChild(nodeCopy);
+
+    // Keeping the idea of the new element
+    concept["domID"] = nodeCopy.id;
+    debugDump();
+}
+
+function findIdeaFromDomConceptID(conceptDomID) {
+    for (var containerId in ideas) {
+        var idea = ideas[containerId];
+        for (var concept of idea.concepts) {
+            if (concept.domID == conceptDomID) {
+                return(idea);
+            }
+        }
+    }
+    return(null);
+}
+
+// Return the removed concept or null
+function removeConceptFromIdeaWithDomID(conceptDomID, idea) {
+    var index = 0;
+    for (var concept of idea.concepts) {
+        if (concept.domID == conceptDomID) {
+            return(idea.concepts.splice(index, 1)[0]);
+        }
+        index++;
+    }
+    return(null);
+}
+
+function createConceptCopy(sourceConcept) {
+    var nodeCopy = sourceConcept.cloneNode(true);
+    incrementalID++;
+    nodeCopy.id = nodeCopy.id + "_copy_" + incrementalID;
+    nodeCopy.classList.remove("originalImage");
+    return(nodeCopy);
+}
+
+// DEBUG
+
+function debugDump() {
+    console.debug("---DEBUG---");
+    var debugContainer = document.getElementById("DEBUG");
+    debugContainer.innerHTML = '';
+
+    for (var containerId in ideas) {
+        var idea = ideas[containerId];
+        debugAppend("{" + containerId + "}");
+        for (var concept of idea.concepts) {
+            debugAppend("----[" + concept.id + " | " + concept.domID +"]");
+        }
+    }
+    console.debug(ideas);
+    console.debug("-----------");
+}
+
+function debugAppend(text) {
+    var debugContainer = document.getElementById("DEBUG");
+    var textNode = document.createTextNode(text);
+    var newline = document.createElement("br");
+    debugContainer.appendChild(textNode);
+    debugContainer.appendChild(newline);
+}
+</script>
+
+{% endblock %}
