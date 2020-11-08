@@ -10,7 +10,7 @@
             <div class="row">
             {% for elt in concept_set %}
                 <div class="col-ms-2 themed-grid-col">
-                    <img class="ideaImage"
+                    <img class="conceptImage"
                         id="{{ elt }}"
                         draggable="true"
                         ondragstart="drag(event)"
@@ -33,12 +33,12 @@
             </div>
             <div>
                 <button onclick="createNewIdea()">Create new idea</button>
-
+                <br />
+                <img id="trash" class="trashIcon" ondrop="drop(event)" ondragover="allowDrop(event)" src="{{static_url_for('static', filename='build/img/trash.svg') }}" />
                 <br />
                 <input id="answer" type="text" />
                 <button onclick="create()">Create</button>
                 <br />
-                <img id="trash" class="trashIcon" ondrop="drop(event)" ondragover="allowDrop(event)" src="{{static_url_for('static', filename='build/img/trash.svg') }}" />
             </div>
 
             <div id="DEBUG"></div>
@@ -99,6 +99,7 @@ function drop(ev) {
         }
         addConceptToIdea(conceptID, targetId, -1)
     }
+    updateViews();
 }
 
 function removeConcept(conceptDomID) {
@@ -132,13 +133,13 @@ function createNewIdea() {
     domIdea.ondragover=function(event){allowDrop(event)};
     domIdea.style.backgroundColor = availableColors.shift();
 
-    // Creating the + element
+    // Storing the idea
+    ideas[domIdea.id] = {"concepts": [], "id": domIdea.id, "dom": domIdea};
+
+    // Adding plus icon
     var plus = document.createElement('div');
     plus.classList.add("addImage");
     domIdea.appendChild(plus);
-
-    // Storing the idea
-    ideas[domIdea.id] = {"concepts": [], "id": domIdea.id};
 
     var ideasContainer = document.getElementById("ideasContainer");
     ideasContainer.appendChild(domIdea);
@@ -160,7 +161,10 @@ function swapConcepts(movingElementID, destinationElementID) {
     // Swapping two concepts from ideas
     if (movingElementID.includes("_copy") && destinationElementID.includes("_copy")) {
         console.debug("Swapping")
-        if (isConceptInIdea(movingElementID, destinationElementIdea.id) || isConceptInIdea(destinationElementID, movingElementIdea.id)) {
+        // Prevent swapping if the concept is already in the idea, but allow it if it's swapping concepts inside the
+        // same idea
+        if ((isConceptInIdea(movingElementID, destinationElementIdea.id) || isConceptInIdea(destinationElementID, movingElementIdea.id))
+                && (destinationElementIdea.id != movingElementIdea.id)) {
             console.debug("Already existing concept.")
             return;
         }
@@ -199,6 +203,42 @@ function swapConcepts(movingElementID, destinationElementID) {
         var index2 = Array.prototype.indexOf.call(domDestinationElement.parentNode.children, domDestinationElement);
         domDestinationElement.parentNode.removeChild(domDestinationElement);
         addConceptToIdea(movingElementID, destinationElementIdea.id, index2);
+    }
+}
+
+function updateViews() {
+    var domIdea, children, plus;
+
+    for (var containerId in ideas) {
+        domIdea = ideas[containerId].dom;
+        children = domIdea.children;
+        plusPosition = -1;
+        plus = null;
+        // Moving the plus icon to the end
+        for (var i = 0; i < children.length; i++) {
+            var child = children[i];
+            if (child.classList.contains("addImage")) {
+                plus = child;
+                break;
+            }
+        }
+        domIdea.removeChild(plus);
+        domIdea.appendChild(plus);
+
+        // Updating sizes
+        for (var i = 0; i < children.length; i++) {
+            var child = children[i];
+            // Setting the first image as being bigger
+            if (!child.classList.contains("addImage")) {
+                if (i == 0) {
+                    child.classList.remove("conceptImageInIdea");
+                    child.classList.add("conceptImageInIdeaMain");
+                } else {
+                    child.classList.remove("conceptImageInIdeaMain");
+                    child.classList.add("conceptImageInIdea");
+                }
+            }
+        }
     }
 }
 
@@ -273,11 +313,12 @@ function createConceptCopy(sourceConcept) {
     var nodeCopy = sourceConcept.cloneNode(true);
     incrementalID++;
     nodeCopy.id = nodeCopy.id + "_copy_" + incrementalID;
-    nodeCopy.classList.remove("originalImage");
+    nodeCopy.classList.remove("conceptImage");
+    nodeCopy.classList.add("conceptImageInIdea");
     return(nodeCopy);
 }
 
-// DEBUG
+//////////////////////////////////////////////////////////////////////////// DEBUG
 
 function debugDump() {
     console.debug("---DEBUG---");
@@ -288,7 +329,7 @@ function debugDump() {
         var idea = ideas[containerId];
         debugAppend("{" + containerId + "}");
         for (var concept of idea.concepts) {
-            debugAppend("----[" + concept.id + " | " + concept.domID +"]");
+            debugAppend("----[" + concept.id + "]");
         }
     }
     console.debug(ideas);

@@ -87,12 +87,22 @@ footer .footer-nav {
 
 /* Game */
 
-.ideaImage {
+.conceptImage {
   height: 150px;
   width: 150px;
 }
 
-.ideaImageMain {
+.conceptImageInIdea {
+  height: 100px;
+  width: 100px;
+}
+
+.conceptImageInIdeaMain {
+  height: 150px;
+  width: 150px;
+}
+
+.conceptImageMain {
   height: 200px;
   width: 200px;
 }
