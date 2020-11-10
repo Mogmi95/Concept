@@ -2,42 +2,42 @@
 {% extends "layout.html" %}
 {% block content %}
     <div class="container">
-        <h1>Create a new riddle</h1>
+        <h1>Create a new Concept</h1>
         <br />
     </div>
+
     <div id="main" class="row mb-2">
-        <div id="gamecontainer" class="col-md-6">
+        <div id="gamecontainer" class="col-md-8">
             <div class="row">
             {% for elt in concept_set %}
                 <div class="col-ms-2 themed-grid-col">
-                    <img class="conceptImage"
-                        id="{{ elt }}"
-                        draggable="true"
-                        ondragstart="drag(event)"
-                        title="{{ concept_set[elt]['description'] }}"
-                        src="{{static_url_for('static', filename='build/img/concept/' + concept_set[elt]['image']) }}"
-                    />
+                    <div class="conceptImageContainer">
+                        <img class="conceptImage"
+                            id="{{ elt }}"
+                            draggable="true"
+                            ondragstart="drag(event)"
+                            title="{{ concept_set[elt]['description'] }}"
+                            src="{{static_url_for('static', filename='build/img/concept/' + concept_set[elt]['image']) }}"
+                        />
+                    </div>
                 </div>
             {% endfor %}
             </div>
         </div>
 
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div id="ideasContainer">
                 <h2>Ideas</h2>
-                <!--
-                <div id="containeridea0" class="row ideaContainer" ondrop="drop(event)" ondragover="allowDrop(event)">
-                    <div class="addImage"></div>
-                </div>
-                -->
             </div>
             <div>
-                <button onclick="createNewIdea()">Create new idea</button>
+                <button onclick="createNewIdea()">Add idea</button>
                 <br />
                 <img id="trash" class="trashIcon" ondrop="drop(event)" ondragover="allowDrop(event)" src="{{static_url_for('static', filename='build/img/trash.svg') }}" />
                 <br />
                 <input id="answer" type="text" />
-                <button onclick="create()">Create</button>
+                <br />
+                <button onclick="create()">GENERATE</button>
+                <div id="result"></div>
                 <br />
             </div>
 
@@ -202,6 +202,7 @@ function swapConcepts(movingElementID, destinationElementID) {
         // Creating the concept to a specific place
         var index2 = Array.prototype.indexOf.call(domDestinationElement.parentNode.children, domDestinationElement);
         domDestinationElement.parentNode.removeChild(domDestinationElement);
+        console.debug("HERE " + index2);
         addConceptToIdea(movingElementID, destinationElementIdea.id, index2);
     }
 }
@@ -209,10 +210,11 @@ function swapConcepts(movingElementID, destinationElementID) {
 function updateViews() {
     var domIdea, children, plus;
 
+    // Stuff here is done with multiple loops and really not optimized, but it's way easier to maintain for now.
+
     for (var containerId in ideas) {
         domIdea = ideas[containerId].dom;
         children = domIdea.children;
-        plusPosition = -1;
         plus = null;
         // Moving the plus icon to the end
         for (var i = 0; i < children.length; i++) {
@@ -318,22 +320,79 @@ function createConceptCopy(sourceConcept) {
     return(nodeCopy);
 }
 
+/**
+** Send the request to create a game with the current state.
+*/
+function create() {
+    var domIdea, children;
+    var game = {"set": "default", "language": "en-US"};
+    game["answer"] = document.getElementById("answer").value;
+    var resultIdeas = [];
+
+    var idea;
+    var isCore = true;
+    for (var containerId in ideas) {
+        domIdea = ideas[containerId].dom;
+        children = domIdea.children;
+
+        var idea = {"concepts": []}
+        if (isCore) {
+            idea["is_core"] = true;
+            isCore = false;
+        }
+        for (var i = 0; i < children.length; i++) {
+            var child = children[i];
+            if (child.classList.contains("conceptImageInIdea") || child.classList.contains("conceptImageInIdeaMain")) {
+                idea["concepts"].push({"id":getConceptIDFromDomID(child.id), "points": 1, "pos": i,});
+            }
+        }
+
+        resultIdeas.push(idea);
+    }
+    game['ideas'] = resultIdeas;
+    var jsonResult = JSON.stringify({"game": game});
+    console.debug(jsonResult);
+
+    postData("/game/api/new", jsonResult)
+        .then(data => {
+            var result = document.getElementById("result");
+            result.innerHTML = "";
+            var link = document.createElement("a");
+            link.href = "/game/guess/" + data.conceptcode;
+            link.text = "Go to your game";
+            result.appendChild(link);
+        }
+    );
+}
+
+async function postData(url = '', data = {}) {
+  var csrf_token = "{{ csrf_token() }}";
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrf_token
+    },
+    body: data
+  });
+  return response.json();
+}
+
 //////////////////////////////////////////////////////////////////////////// DEBUG
 
 function debugDump() {
-    console.debug("---DEBUG---");
-    var debugContainer = document.getElementById("DEBUG");
-    debugContainer.innerHTML = '';
-
-    for (var containerId in ideas) {
-        var idea = ideas[containerId];
-        debugAppend("{" + containerId + "}");
-        for (var concept of idea.concepts) {
-            debugAppend("----[" + concept.id + "]");
-        }
-    }
-    console.debug(ideas);
-    console.debug("-----------");
+  console.debug("---DEBUG---");
+  var debugContainer = document.getElementById("DEBUG");
+  debugContainer.innerHTML = '';
+  for (var containerId in ideas) {
+      var idea = ideas[containerId];
+      debugAppend("{" + containerId + "}");
+      for (var concept of idea.concepts) {
+          debugAppend("----[" + concept.id + "]");
+      }
+  }
+  console.debug(ideas);
+  console.debug("-----------");
 }
 
 function debugAppend(text) {

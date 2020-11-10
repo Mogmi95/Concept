@@ -1,71 +1,113 @@
 
 {% extends "layout.html" %}
-{% block content %}
-    <div class="container">
-        <h1>Try to solve this</h1>
-        <br />
-    </div>
-    <div id="gamecontainer" class="container">
-    </div>
-
-    <div class="container">
-    <input id="answer" type="text" />
-    <br />
-    <button onclick="checkAnswer()">Submit answer</button>
-    </div>
+{% block page_title %}
+    Concept Online - Guess
 {% endblock %}
-{% block js %}
 
+{% block content %}
+
+<div class="jumbotron">
+    <div class="container">
+
+      <h1 class="display-3">Guess the concept</h1>
+
+      <p>Can you guess which concept is hiding behind those ideas?</p>
+      <p><a href="https://www.concept-the-game.com/concept/concept.php" class="btn btn-primary btn-large">Explain me the rules &raquo;</a></p>
+    </div>
+</div><!-- /.jumbotron -->
+
+<div class="alert alert-info" role="alert">
+  Languages compatible with this concept: <strong>english</strong>
+</div>
+
+<div id="guessContainer" class="container">
+</div><!-- guesscontainer -->
+
+<div id="guessAnswerContainer" class="container">
+    <input id="answer" type="text" placeholder="Enter your answer here" />
+    <br />
+    <br />
+    <p><a href="#" onclick="checkAnswer()" class="btn btn-primary btn-large">Check your answer</a></p>
+</div><!-- answercontainer -->
+
+{% endblock %}
+
+
+{% block js %}
 <script>
 
 var gamedata = {{ data | safe }};
-var gameset = {{ concept_set | safe }};
-var idea = gamedata['idea'];
-var concepts = idea['concepts'];
+var gameset = {{ game_set | safe }};
+var game = gamedata['game'];
+var ideas = game['ideas'];
 
-var gamecontainer = document.getElementById('gamecontainer');
-var tbl = document.createElement('table');
-var tbdy = document.createElement('tbody');
+var availableColors = ["#E2F0CB99", "#FFB7B299", "#C7CEEA99", "#B5EAD799"];
+
+var gamecontainer = document.getElementById('guessContainer');
+
 
 function createConceptImage(id) {
     image = document.createElement('img');
     imageData = gameset[id];
-    image.alt = imageData['description'];
+    // image.alt = imageData['description'];
     image.title = imageData['description'].join("\n");
     image.src = "{{static_url_for('static', filename='build/img/concept/') }}" + imageData.image;
     return image;
 }
 
-for (const concept of concepts) {
-    var tr = document.createElement('tr');
-    // Main idea
-    var td = document.createElement('td');
-    addIdea(td, concept['main'], true);
-    tr.appendChild(td);
-
-    // Sub ideas
-    for (const precision of concept['precisions']) {
-        td = document.createElement('td');
-        addIdea(td, precision, false);
-        tr.appendChild(td);
-    }
-    tbdy.appendChild(tr);
+function addIconToConcept(conceptDiv) {
+    var iconContainer = document.createElement('div');
+    iconContainer.classList.add('conceptIconContainer');
+    var icon = document.createElement('img');
+    icon.src = "{{static_url_for('static', filename='build/img/star.svg') }}";
+    iconContainer.appendChild(icon);
+    conceptDiv.appendChild(iconContainer);
 }
-tbl.appendChild(tbdy);
-gamecontainer.appendChild(tbl);
 
-function addIdea(container, ideaID, isMainIdea) {
-    image = createConceptImage(ideaID);
-    image.classList.add("conceptImage");
-    if (isMainIdea) {
-        image.classList.add("conceptImageMain");
-    }
-    container.appendChild(image);
+function addPointsToConcept(conceptDiv, points) {
+    var iconContainer = document.createElement('div');
+    iconContainer.classList.add('conceptIconContainer');
+    var icon = document.createTextNode("x" + points);
+    iconContainer.appendChild(icon);
+    conceptDiv.appendChild(iconContainer);
 }
+
+for (const idea of ideas) {
+    var ideaContainer = document.createElement('div');
+    ideaContainer.classList.add("ideaContainer");
+    ideaContainer.classList.add("row");
+    ideaContainer.style.backgroundColor = availableColors.shift();
+
+    var isFirst = true;
+    for (const concept of idea.concepts) {
+        // Container to separate the row from the content
+        var conceptContainer = document.createElement('div');
+        conceptContainer.classList.add('conceptContainer');
+
+        var conceptImageContainer = document.createElement('div');
+        conceptImageContainer.classList.add('conceptImageContainer');
+        var conceptImage = createConceptImage(concept.id);
+        conceptImageContainer.appendChild(conceptImage);
+        conceptContainer.appendChild(conceptImageContainer);
+
+        if (isFirst) {
+            addIconToConcept(conceptContainer);
+            isFirst = false;
+        }
+        else if (concept.points > 1) {
+            addPointsToConcept(conceptContainer, concept.points);
+        }
+
+        ideaContainer.appendChild(conceptContainer)
+    }
+    gamecontainer.appendChild(ideaContainer);
+}
+
+document.getElementById(guessAnswerContainer);
 
 function checkAnswer() {
     answerInput = document.getElementById("answer");
-    if (answerInput.value == idea['answer']) {
+    if (answerInput.value == game['answer']) {
         alert("YES");
     } else {
         alert("NO");
