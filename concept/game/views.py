@@ -20,7 +20,7 @@ def guess(conceptcode):
     return render_template("game/guess.html", data=data, game_set=game_set)
 
 @blueprint.route("/new")
-def creation():
+def new():
     """Create a new Idea."""
 
     concept_set = get_set()

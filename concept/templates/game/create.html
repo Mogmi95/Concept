@@ -3,7 +3,9 @@
 {% block content %}
     <div class="container">
         <h1>Create a new Concept</h1>
-        <br />
+        <div class="row">
+            <p class="lead">Drag and drop images in the section on the right to create concepts.</p>
+        </div>
     </div>
 
     <div id="main" class="row mb-2">
@@ -30,13 +32,16 @@
                 <h2>Ideas</h2>
             </div>
             <div>
-                <button onclick="createNewIdea()">Add idea</button>
+                <button class="btn btn-primary btn-large" onclick="createNewIdea()">+ Add idea</button>
                 <br />
-                <img id="trash" class="trashIcon" ondrop="drop(event)" ondragover="allowDrop(event)" src="{{static_url_for('static', filename='build/img/trash.svg') }}" />
+                <div id="trash" ondrop="handleTrashConceptEvent(event)" ondragover="allowDrop(event)" class="guessTrashContainer">
+                    <img id="trashpomme" class="trashIcon" src="{{static_url_for('static', filename='build/img/trash.svg') }}" />
+                    <p id="trashpizza">Drag an image here to remove it</p>
+                </div>
                 <br />
                 <input id="answer" type="text" />
                 <br />
-                <button onclick="create()">GENERATE</button>
+                <button class="btn btn-primary btn-large" onclick="create()">Generate Concept</button>
                 <div id="result"></div>
                 <br />
             </div>
@@ -79,26 +84,42 @@ function getConceptIDFromDomID(domID) {
     return(domID.split("_")[0]);
 }
 
-function drop(ev) {
+function handleDropConcept(ev) {
     ev.preventDefault();
+    console.debug("handleDropConcept: " + ev.target);
+    if (ev.target.classList.contains("ideaContainer") || ev.target.classList.contains("addImage")) {
+        handleAppendConcept(ev);
+    } else {
+        handleReplaceConcept(ev);
+    }
+    updateViews();
+}
+
+function handleAppendConcept(ev) {
+    console.debug("handleAppendConcept: " + ev.target);
+    var conceptID = ev.dataTransfer.getData("conceptID");
+    var targetId = ev.target.id;
+
+    targetId = ev.target.closest(".ideaContainer").id;
+    console.debug(targetId);
+    addConceptToIdea(conceptID, targetId, -1)
+}
+
+
+function handleReplaceConcept(ev) {
+    console.debug("handleDropConcept: " + ev.target);
     var conceptID = ev.dataTransfer.getData("conceptID");
     var conceptDomID = ev.dataTransfer.getData("conceptDomID");
     var targetId = ev.target.id;
-    // Delete a concept
-    if (targetId == "trash") {
-        removeConcept(conceptDomID);
-    // Swapping two concepts
-    } else if (targetId.includes("_copy") || conceptDomID.includes("_copy")) {
-        swapConcepts(conceptDomID, targetId);
-    // Adding a concept to an idea
-    } else {
-        console.debug(targetId);
-        // If targeting an element inside the list, should still target the container.
-        if (!targetId.includes("containeridea")) {
-            targetId = ev.target.parentNode.id;
-        }
-        addConceptToIdea(conceptID, targetId, -1)
-    }
+
+    swapConcepts(conceptDomID, targetId);
+}
+
+function handleTrashConceptEvent(ev) {
+    console.debug("handleTrashConceptEvent: " + ev.target);
+    ev.preventDefault();
+    var conceptDomID = ev.dataTransfer.getData("conceptDomID");
+    removeConcept(conceptDomID);
     updateViews();
 }
 
@@ -129,7 +150,7 @@ function createNewIdea() {
     domIdea.id = "containeridea" + incrementalID;
     domIdea.classList.add('row');
     domIdea.classList.add('ideaContainer');
-    domIdea.ondrop=function(event){drop(event)};
+    domIdea.ondrop=function(event){handleDropConcept(event)};
     domIdea.ondragover=function(event){allowDrop(event)};
     domIdea.style.backgroundColor = availableColors.shift();
 
@@ -317,6 +338,8 @@ function createConceptCopy(sourceConcept) {
     nodeCopy.id = nodeCopy.id + "_copy_" + incrementalID;
     nodeCopy.classList.remove("conceptImage");
     nodeCopy.classList.add("conceptImageInIdea");
+    nodeCopy.ondrop=function(event){handleDropConcept(event)};
+    nodeCopy.ondragover=function(event){allowDrop(event)};
     return(nodeCopy);
 }
 
@@ -381,18 +404,18 @@ async function postData(url = '', data = {}) {
 //////////////////////////////////////////////////////////////////////////// DEBUG
 
 function debugDump() {
-  console.debug("---DEBUG---");
-  var debugContainer = document.getElementById("DEBUG");
-  debugContainer.innerHTML = '';
-  for (var containerId in ideas) {
-      var idea = ideas[containerId];
-      debugAppend("{" + containerId + "}");
-      for (var concept of idea.concepts) {
-          debugAppend("----[" + concept.id + "]");
-      }
-  }
-  console.debug(ideas);
-  console.debug("-----------");
+  //console.debug("---DEBUG---");
+  //var debugContainer = document.getElementById("DEBUG");
+  //debugContainer.innerHTML = '';
+  //for (var containerId in ideas) {
+  //    var idea = ideas[containerId];
+  //    debugAppend("{" + containerId + "}");
+  //    for (var concept of idea.concepts) {
+  //        debugAppend("----[" + concept.id + "]");
+  //    }
+  //}
+  //console.debug(ideas);
+  //console.debug("-----------");
 }
 
 function debugAppend(text) {
