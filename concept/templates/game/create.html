@@ -422,7 +422,7 @@ async function postData(url = '', data = {}) {
   return response.json();
 }
 
-{% if not config['DEBUG'] %}
+{% if config['DEBUG'] %}
 //////////////////////////////////////////////////////////////////////////// DEBUG
 
 function debugDump() {
