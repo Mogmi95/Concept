@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Game views."""
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, redirect, url_for
+from random import choice
 
 import base64
 import json
@@ -25,6 +26,19 @@ def new():
 
     concept_set = get_set()
     return render_template("game/create.html", concept_set=concept_set)
+
+@blueprint.route("/random")
+def random():
+    """Propose a premade concept from a list."""
+
+    return redirect(url_for("game.guess", conceptcode=get_random_concept()))
+
+def get_random_concept():
+    concepts = [
+        "g0-en-ic26p1c84p1ic16p1c108p1c116p1c105p1-cGl6emE=" # pizza,
+        "g0-en-ic29p1ic34p1c17p1ic6p1c58p1c21p1i-YmF0bWFu" # batman
+    ]
+    return choice(concepts)
 
 @blueprint.route("/api/new", methods=['POST'])
 def api_create():
