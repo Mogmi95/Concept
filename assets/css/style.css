@@ -88,6 +88,11 @@ footer .footer-nav {
 /* Game */
 
 /* GUESSING */
+.row {
+  /* Overring the -15px from bootstrap until I understand why it's there */
+  margin-left: 0px;
+  margin-right: 0px;
+}
 
 #guessContainer {
   width: 75%;

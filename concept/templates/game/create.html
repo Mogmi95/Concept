@@ -116,7 +116,7 @@ function handleAppendConcept(ev) {
 
 
 function handleReplaceConcept(ev) {
-    console.debug("handleDropConcept: " + ev.target);
+    console.debug("handleReplaceConcept: " + ev.target);
     var conceptID = ev.dataTransfer.getData("conceptID");
     var conceptDomID = ev.dataTransfer.getData("conceptDomID");
     var targetId = ev.target.id;
@@ -322,10 +322,14 @@ function addConceptToIdea(conceptID, ideaID, position) {
 }
 
 function findIdeaFromDomConceptID(conceptDomID) {
+    console.debug("findIdeaFromDomConceptID:" + conceptDomID);
     for (var containerId in ideas) {
+        console.debug("    containerId:" + containerId);
         var idea = ideas[containerId];
         for (var concept of idea.concepts) {
+            console.debug("        concept:" + concept);
             if (concept.domID == conceptDomID) {
+                console.debug("            FOUND:" + conceptDomID);
                 return(idea);
             }
         }
@@ -351,7 +355,6 @@ function createConceptCopy(sourceConcept) {
     nodeCopy.id = nodeCopy.id + "_copy_" + incrementalID;
     nodeCopy.classList.remove("conceptImage");
     nodeCopy.classList.add("conceptImageInIdea");
-    nodeCopy.ondrop=function(event){handleDropConcept(event)};
     nodeCopy.ondragover=function(event){allowDrop(event)};
     nodeCopy.ondragenter=function(event){showDropPossible(event, true)};
     nodeCopy.ondragleave=function(event){showDropPossible(event, false)};
