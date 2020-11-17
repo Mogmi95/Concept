@@ -28,7 +28,7 @@
         </div>
 
         <div class="col-md-4">
-            <div id="trash" ondrop="handleTrashConceptEvent(event)" ondragover="allowDrop(event)" class="guessTrashContainer">
+            <div id="trash" ondrop="handleTrashConceptEvent(event)" ondragover="allowDrop(event)" ondragenter="showDropPossible(event, true, false)" ondragleave="showDropPossible(event, false)" class="guessTrashContainer">
                 <img class="trashIcon" src="{{static_url_for('static', filename='build/img/trash.svg') }}" />
                 <p>Drag an image here to remove it</p>
             </div>
@@ -73,11 +73,21 @@ function allowDrop(ev) {
     ev.preventDefault();
 }
 
-function showDropPossible(ev, isPossible) {
-    if (isPossible) {
-        ev.target.classList.add("hoveredDestinationElement");
+function showDropPossible(ev, isPossible, isGood=true) {
+    console.debug("showDropPossible:" + isPossible);
+    var good = "hoveredDestinationElement";
+    var bad = "hoveredDestinationElementBad";
+    var cls;
+    if (isGood) {
+        cls = good;
     } else {
-        ev.target.classList.remove("hoveredDestinationElement");
+        cls = bad;
+    }
+    if (isPossible) {
+        ev.target.classList.add(cls);
+    } else {
+        ev.target.classList.remove(good);
+        ev.target.classList.remove(bad);
     }
 }
 
@@ -96,6 +106,7 @@ function getConceptIDFromDomID(domID) {
 
 function handleDropConcept(ev) {
     ev.preventDefault();
+    // Resetting visual drag effects
     showDropPossible(ev, false);
     console.debug("handleDropConcept: " + ev.target);
     if (ev.target.classList.contains("ideaContainer") || ev.target.classList.contains("addImage")) {
@@ -131,6 +142,8 @@ function handleTrashConceptEvent(ev) {
     ev.preventDefault();
     var conceptDomID = ev.dataTransfer.getData("conceptDomID");
     removeConcept(conceptDomID);
+    // Resetting visual drag effects
+    showDropPossible(ev, false);
     updateViews();
 }
 
