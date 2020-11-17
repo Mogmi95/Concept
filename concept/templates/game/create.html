@@ -422,6 +422,7 @@ async function postData(url = '', data = {}) {
   return response.json();
 }
 
+{% if not config['DEBUG'] %}
 //////////////////////////////////////////////////////////////////////////// DEBUG
 
 function debugDump() {
@@ -446,6 +447,11 @@ function debugAppend(text) {
     debugContainer.appendChild(textNode);
     debugContainer.appendChild(newline);
 }
+{% else %}
+function debugDump() {}
+{% endif %}
+
+
 </script>
 
 {% endblock %}
