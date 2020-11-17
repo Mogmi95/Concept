@@ -46,7 +46,7 @@
                 <br />
             </div>
 
-            {% if not config['DEBUG'] %}
+            {% if config['DEBUG'] %}
             <div id="DEBUG"></div>
             {% endif %}
     </div>
@@ -183,6 +183,9 @@ function createNewIdea() {
 }
 
 function swapConcepts(movingElementID, destinationElementID) {
+    if (movingElementID == destinationElementID) {
+        return;
+    }
     var domMovingElement = document.getElementById(movingElementID)
     var domDestinationElement = document.getElementById(destinationElementID)
 
