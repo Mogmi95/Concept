@@ -46,7 +46,9 @@
                 <br />
             </div>
 
+            {% if not config['DEBUG'] %}
             <div id="DEBUG"></div>
+            {% endif %}
     </div>
 
 {% endblock %}
@@ -242,6 +244,7 @@ function swapConcepts(movingElementID, destinationElementID) {
 }
 
 function updateViews() {
+    console.debug("updateViews");
     var domIdea, children, plus;
 
     // Stuff here is done with multiple loops and really not optimized, but it's way easier to maintain for now.
@@ -314,7 +317,11 @@ function addConceptToIdea(conceptID, ideaID, position) {
     // Displaying the new element
     var elt = document.getElementById(conceptID);
     var nodeCopy = createConceptCopy(elt);
-    htmlContainer.appendChild(nodeCopy);
+    if (position >= 0) {
+        htmlContainer.insertBefore(elt, htmlContainer.children[position]);
+    } else {
+        htmlContainer.appendChild(nodeCopy);
+    }
 
     // Keeping the idea of the new element
     concept["domID"] = nodeCopy.id;
@@ -322,14 +329,10 @@ function addConceptToIdea(conceptID, ideaID, position) {
 }
 
 function findIdeaFromDomConceptID(conceptDomID) {
-    console.debug("findIdeaFromDomConceptID:" + conceptDomID);
     for (var containerId in ideas) {
-        console.debug("    containerId:" + containerId);
         var idea = ideas[containerId];
         for (var concept of idea.concepts) {
-            console.debug("        concept:" + concept);
             if (concept.domID == conceptDomID) {
-                console.debug("            FOUND:" + conceptDomID);
                 return(idea);
             }
         }
