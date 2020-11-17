@@ -106,8 +106,10 @@ for (const idea of ideas) {
 document.getElementById(guessAnswerContainer);
 
 function checkAnswer() {
+    // Simplest check implementation ever...
+    // This will be done server-side in the end
     answerInput = document.getElementById("answer");
-    if (answerInput.value == game['answer']) {
+    if (answerInput.value.toLowerCase() == game['answer'].toLowerCase()) {
         alert("YES");
     } else {
         alert("NO");

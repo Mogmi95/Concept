@@ -35,8 +35,8 @@ def random():
 
 def get_random_concept():
     concepts = [
-        "g0-en-ic26p1c84p1ic16p1c108p1c116p1c105p1-cGl6emE=" # pizza,
-        "g0-en-ic29p1ic34p1c17p1ic6p1c58p1c21p1i-YmF0bWFu" # batman
+        "g0-en-ic26p1c84p1ic16p1c108p1c116p1c105p1-cGl6emE=", # pizza
+        "g0-en-ic29p1c3p1ic34p1c17p1ic6p1c58p1c21p1-YmF0bWFu" # batman
     ]
     return choice(concepts)
 
