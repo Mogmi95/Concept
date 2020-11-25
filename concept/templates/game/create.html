@@ -245,7 +245,7 @@ function swapConcepts(movingElementID, destinationElementID) {
         addConceptToIdea(getConceptIDFromDomID(movingElementID), destinationElementID, -1);
     // Replacing a concept from an idea with one from the list
     } else {
-        console.debug("Replacing")
+        console.debug("Replacing " + domDestinationElement.id + " with " + movingElementID)
         if (isConceptInIdea(movingElementID, destinationElementIdea.id)) {
             console.debug("Already existing concept.")
             return;
@@ -334,7 +334,7 @@ function addConceptToIdea(conceptID, ideaID, position) {
     var elt = document.getElementById(conceptID);
     var nodeCopy = createConceptCopy(elt);
     if (position >= 0) {
-        htmlContainer.insertBefore(elt, htmlContainer.children[position]);
+        htmlContainer.insertBefore(nodeCopy, htmlContainer.children[position]);
     } else {
         htmlContainer.appendChild(nodeCopy);
     }
