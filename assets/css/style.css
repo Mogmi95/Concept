@@ -169,7 +169,12 @@ footer .footer-nav {
 
 
 
+/* CREATING */
 
+.answer {
+  padding: 8px;
+  border: 1px dotted black;
+}
 
 
 
